@@ -1,9 +1,6 @@
-// ℹ️ Gets access to environment variables/settings
-// https://www.npmjs.com/package/dotenv
 require("dotenv").config();
-
-// ℹ️ Connects to the database
 require("./db");
+const { isAuthenticated } = require("./middleware/jwt.middleware")
 
 // Handles http requests (express is node js framework)
 // https://www.npmjs.com/package/express
@@ -16,7 +13,7 @@ require("./config")(app);
 
 // 👇 Start handling routes here
 const indexRoutes = require("./routes/index.routes");
-app.use("/api", indexRoutes);
+app.use("/api", isAuthenticated, indexRoutes);
 
 const authRoutes = require("./routes/auth.routes");
 app.use("/auth", authRoutes);
