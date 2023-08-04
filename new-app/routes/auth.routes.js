@@ -16,10 +16,15 @@ router.post("/signup", async (req, res, next) => {
   const passwordHash = bcrypt.hashSync(payload.password, salt)
 
   try {
-    const newUser = await User.create({ username: payload.username, password: passwordHash, campus: payload.campus, course: payload.course, image: payload.image })
-    res.status(201).json({ user: newUser })
+    const potentialUser = await User.findOne({ username: payload.username })
+    if (!potentialUser) {
+      const newUser = await User.create({ username: payload.username, password: passwordHash, campus: payload.campus, course: payload.course, image: payload.image })
+      res.status(201).json({ user: newUser })
+    }else{
+      res.status(304).send({ errorMessage: "User with this name already exists"})
+    }
   } catch (error) {
-    res.status(500).json(error)
+    res.status(500).json({errorMessage: "A new user could not be created"})
   }
 });
 
@@ -41,7 +46,9 @@ router.post("/login", async (req, res, next) => {
           algorithm: "HS256",
           expiresIn: "6h"
         })
-      res.status(201).json({ authToken: authToken })
+        
+        console.log('authToken: ', authToken);
+      res.status(200).json({ authToken: authToken })
     } else {
       // no password-match
       res.status(403).json({ errorMessage: "Issues logging in" })
@@ -54,9 +61,11 @@ router.post("/login", async (req, res, next) => {
 });
 
 /* GET verify */
-router.get("/verify", isAuthenticated, (req, res) => {
-    console.log('req payload: ', req.payload);
-    res.status(200).json(req.payload);
+router.get("/verify", isAuthenticated, async (req, res) => {
+  console.log('req: ', req);
+
+  const currentUser = await User.findById(req.payload.userId)
+  res.status(200).json({message: 'Token is valid', currentUser})
 })
 
 module.exports = router;
